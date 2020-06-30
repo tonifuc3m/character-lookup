@@ -36,6 +36,7 @@ if __name__ == '__main__':
     ann = []
     for r, d, f in os.walk(datapath):
         for filename in f:
+            print(f)
             if filename[-3:] != 'txt': # get only txt files
                 continue
             ann = ann + main(r, filename, df_annot)

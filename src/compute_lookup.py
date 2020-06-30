@@ -129,8 +129,13 @@ def main(r, filename, df, threshold=2):
         
         # Calculate matches   
         matches_this = distance(span, windows, threshold)
-        positions = list(map(lambda x: [(m.start(), m.end(), m.group()) for m in
-                                        re.finditer(x, text)], matches_this))
+        try:
+            positions = list(map(lambda x: [(m.start(), m.end(), m.group()) for m in
+                                            re.finditer(x, text)], matches_this))
+        except:
+            # Add re.escape() to avoid parenthesis to be considered as regex pattern
+            positions = list(map(lambda x: [(m.start(), m.end(), m.group()) for m in
+                                re.finditer(re.escape(x), text)], matches_this))
         positions = Flatten(positions)
         
         # Add to ANN

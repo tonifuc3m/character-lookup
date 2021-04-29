@@ -48,6 +48,7 @@ if __name__ == '__main__':
     df_new = df_new.drop_duplicates(subset=['fname','label','p0','p1','span'])
     ann_dedupl = (df_new.groupby('fname')[['m','label','p0','p1','span']].
                   apply(lambda g: list(map(tuple, g.values.tolist()))).to_dict())   
+    ann_dedupl = {k: [list(item[1:]) + ['xx'] for item in v] for k,v in ann_dedupl.items() }
     
     ######## Write output files ########
     print('\n\nWriting output ANN and TXT files...\n\n')

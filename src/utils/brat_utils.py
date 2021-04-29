@@ -10,35 +10,61 @@ FUNCTION USED TO DEAL WITH BRAT FILES
 from shutil import copyfile
 import os
 
-def modify_copied_files(annotations_not_in_ann, output_path_new_files):
+def modify_copied_files(new_annots, out_path, with_notes=False):
     '''
     DESCRIPTION: add suggestions (newly discovered annotations) to ann files.
     
     Parameters
     ----------
-    annotations_not_in_ann: python dict 
+    new_annots: python dict 
         It has new annotations and the file they belong to. 
         {filename: [annotation1, annotatio2, ]}
-    output_path_new_files: str. 
+    out_path: str
         Path to files.
+    with_notes: bool
+        whether we are predicting codes, or not
     '''
-    files_new_annot = list(annotations_not_in_ann.keys())
+    files_new_annot = list(new_annots.keys())
     
-    for r, d, f in os.walk(output_path_new_files):
-        for filename in f:
+    for root, dirs, files in os.walk(out_path):
+        for filename in files:
             if filename not in files_new_annot:
                 continue
-            filename_ann = '.'.join(filename.split('.')[0:-1]) + '.ann'
-            # 1. Get highest mark
-            mark = get_highest_mark_ann(r, filename_ann)
-
-            # 3. Write new annotations
-            new_annotations = annotations_not_in_ann[filename]
-            with open(os.path.join(r,filename_ann),"a") as file:
+            if filename[-3:] != 'txt':
+                continue
+            filename_ann = filename[0:-3]+ 'ann'
+            
+            # Get highest mark in ann
+            if os.path.exists(os.path.join(root, filename_ann)) == 0:
+                mark = 0
+                mode = "w"
+            else:
+                with open(os.path.join(root,filename_ann),"r") as file:
+                    lines = file.readlines()
+                    if lines:
+                        # Get marks
+                        marks = list(map(lambda x: int(x.split('\t')[0][1:]),
+                                         filter(lambda x: x[0] == 'T', lines)))
+                    
+                        # 2. Get highest mark
+                        mark = max(marks)
+                    else:
+                        # 2. Get last mark
+                        mark = 0
+                mode = "a"
+           
+            # 2. Write new annotationsgit 
+            new_annotations = new_annots[filename]
+            with open(os.path.join(root,filename_ann),mode) as file:
                 for a in new_annotations:
                     mark = mark + 1
-                    file.write('T' + str(mark) + '\t' + '_SUG_' + a[1] + ' ' +
-                               str(a[2]) + ' ' + str(a[3]) + '\t' + a[4] + '\n')  
+                    file.write('T' + str(mark) + '\t' + '_SUG_' +  a[0] + 
+                               ' ' + str(a[1]) + ' ' + str(a[2]) + 
+                               '\t' + a[3] + '\n') 
+                    if with_notes == False:
+                        continue
+                    file.write('#' + str(mark) + '\t' + 'AnnotatorNotes' +
+                               ' T' + str(mark) + '\t' + a[4] + '\n')  
                             
 def get_highest_mark_ann(r, filename):
     '''
